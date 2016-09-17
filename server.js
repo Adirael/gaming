@@ -3,9 +3,10 @@ var app         = express();
 var bodyParser  = require('body-parser');
 var morgan      = require('morgan');
 var mongoose    = require('mongoose');
-var passport	= require('passport');
+var passport  = require('passport');
 var config      = require('./config/database'); // get db config file
 var User        = require('./app/models/users'); // get the mongoose model
+var Game        = require('./app/models/games');
 var port        = process.env.PORT || 8080;
 var jwt         = require('jwt-simple');
  
@@ -55,6 +56,79 @@ apiRoutes.post('/signup', function(req, res) {
     });
   }
 });
+
+apiRoutes.post('/authenticate', function(req, res) {
+  User.findOne({
+    name: req.body.name
+  }, function(err, user){
+    if (err) throw err;
+    if (!user) {
+      res.send({success: false, msg: 'Authentication failed. User not found'});
+    } else {
+      // Check if Password Matches
+      user.comparePassword(req.body.password, function(err, isMatch){
+        if (isMatch && !err) {
+          //user found and pass ok
+          var token = jwt.encode(user, config.secret);
+          res.json({success: true, token: 'JWT '+token});
+        } else {
+          res.send({success: false, msg: 'Authentication Failed, Wrong Password'})
+        }
+      });
+    }
+  });
+});
+
+apiRoutes.post('/gameadd', function(req, res) {
+  if (!req.body.name || !req.body.platform || !req.body.cover) {
+    res.json({success: false, msg:'Please add some fields required.'});
+  } else {
+    var newGame = new Game({
+      name: req.body.name,
+      platform: req.body.platform,
+      cover: req.body.cover
+    });
+    newGame.save(function(err){
+      if (err) {
+        return res.json({success:false, msg: 'Game already added'});
+      }
+      res.json({success:true, msg: 'Game added to list'});
+    });
+  }
+});
+
+apiRoutes.get('/memberinfo', passport.authenticate('jwt', {session: false}), function(req,res){
+  var token = getToken(req.headers);
+  if (token) {
+    var decoded = jwt.decode(token, config.secret);
+    User.findOne({
+      name: decoded.name
+    }, function(err, user){
+      if (err) throw err;
+
+      if(!user) {
+        return res.status(403).send({success: false, msg: 'Authentication failed. User not found'});
+      } else {
+        res.json({success: true, msg: 'Welcome to the member area '+user.name});
+      }
+    });
+  } else {
+    return res.status(403).send({success: false, msg: 'No token provided'});
+  }
+});
+
+getToken = function(headers) {
+  if (headers && headers.authorization) {
+    var parted = headers.authorization.split(' ');
+    if (parted.length === 2) {
+      return parted[1];
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
+};
  
 // connect the api routes under /api/*
 app.use('/api', apiRoutes);
