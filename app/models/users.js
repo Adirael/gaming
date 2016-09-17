@@ -14,7 +14,23 @@ var UserSchema = new Schema({
   password: {
         type: String,
         required: true
-    }
+    },
+  gamesPending: {
+        type: String,
+        required: false
+    },
+  gamesBorrowed: {
+        type: String,
+        required: false
+    },
+  gamesDone: {
+    type: String,
+    required: false
+  },
+  gamesPlaying: {
+    type: String,
+    required: false
+  }
 });
  
 UserSchema.pre('save', function (next) {
