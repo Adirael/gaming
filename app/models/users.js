@@ -16,19 +16,19 @@ var UserSchema = new Schema({
         required: true
     },
   gamesPending: {
-        type: String,
+        type: Object,
         required: false
     },
   gamesBorrowed: {
-        type: String,
+        type: Object,
         required: false
     },
   gamesDone: {
-    type: String,
+    type: Object,
     required: false
   },
   gamesPlaying: {
-    type: String,
+    type: Object,
     required: false
   }
 });

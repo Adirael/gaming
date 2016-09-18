@@ -45,7 +45,11 @@ apiRoutes.post('/signup', function(req, res) {
   } else {
     var newUser = new User({
       name: req.body.name,
-      password: req.body.password
+      password: req.body.password,
+      gamesPending: {},
+      gamesBorrowed: {},
+      gamesDone: {},
+      gamesPlaying: {}
     });
     // save the user
     newUser.save(function(err) {
@@ -96,6 +100,43 @@ apiRoutes.post('/gameadd', function(req, res) {
     });
   }
 });
+/* Not necessary?
+apiRoutes.post('/addpendinggame', function(req, res){
+  if(!req.body.name || !req.body.username) {
+    res.json({success:false, msg:'Some fields required'});
+  } else {
+    User.findOneAndUpdate({'name':req.body.username},  {$push:{gamesPending:{name: req.body.name}}}, {upsert:true}, function(err, user){
+      if (err) {
+        return res.json({success: false, msg: 'Error ocurred'});
+      }
+      res.json({success:true, msg: 'Game added to pending list'});
+    });
+  }
+});
+*/
+
+apiRoutes.post('/checkpendinggame', function(req, res){
+  if(!req.body.name || !req.body.username) {
+    res.json({success:false, msg:'Some fields required'});
+  } else {
+    User.findOne({'name':req.body.username, 'gamesPending.name': req.body.name}, function(err, result){
+      if (err) {
+        return res.json({success: false, msg: 'Error ocurred'});
+      }
+      if (!result) {
+        User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesPending:{name: req.body.name}}}, {upsert:true}, function (err, result){
+          if(err) {
+            return res.json({success: false, msg: 'Error ocurred'});
+          }
+          return res.json({gameinlist: false, msg: 'The game is not in list, added'});
+        });
+      } else {
+        return res.json({gameinlist: true, msg: 'The game is in list'});  
+      }
+    });
+  }
+});
+
 
 apiRoutes.get('/memberinfo', passport.authenticate('jwt', {session: false}), function(req,res){
   var token = getToken(req.headers);
@@ -105,7 +146,7 @@ apiRoutes.get('/memberinfo', passport.authenticate('jwt', {session: false}), fun
       name: decoded.name
     }, function(err, user){
       if (err) throw err;
-
+I
       if(!user) {
         return res.status(403).send({success: false, msg: 'Authentication failed. User not found'});
       } else {
