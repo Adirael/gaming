@@ -253,7 +253,7 @@ apiRoutes.get('/gameslist', function(req,res){
           cover: games[i].cover
         });
       }
-      return res.status(403).send({success:true, gamesList: gamesJson});
+      return res.status(403).send({gamesList: gamesJson});
     }
   });
 });
