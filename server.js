@@ -116,24 +116,91 @@ apiRoutes.post('/addpendinggame', function(req, res){
 */
 
 apiRoutes.post('/checkpendinggame', function(req, res){
-  if(!req.body.name || !req.body.username) {
+  if(!req.body.name || !req.body.username || !req.body.gameType) {
     res.json({success:false, msg:'Some fields required'});
   } else {
-    User.findOne({'name':req.body.username, 'gamesPending.name': req.body.name}, function(err, result){
-      if (err) {
-        return res.json({success: false, msg: 'Error ocurred'});
-      }
-      if (!result) {
-        User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesPending:{name: req.body.name}}}, {upsert:true}, function (err, result){
-          if(err) {
-            return res.json({success: false, msg: 'Error ocurred'});
-          }
-          return res.json({gameinlist: false, msg: 'The game is not in list, added'});
-        });
-      } else {
-        return res.json({gameinlist: true, msg: 'The game is in list'});  
-      }
-    });
+    if (req.body.gameType == 'pending') {
+      User.findOne({'name':req.body.username, 'gamesPending.name': req.body.name}, function(err, result){
+        if (err) {
+          return res.json({success: false, msg: 'Error ocurred'});
+        }
+        if (!result) {
+          User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesPending:{name: req.body.name}}}, {upsert:true}, function (err, result){
+            if(err) {
+              return res.json({success: false, msg: 'Error ocurred'});
+            }
+            return res.json({gameinlist: false, msg: 'Game Added to Pending List'});
+          });
+        } else {
+          return res.json({gameinlist: true, msg: 'The game is in list'});
+        }
+      });
+    } else if (req.body.gameType == 'borrowed') {
+      User.findOne({'name':req.body.username, 'gamesBorrowed.name': req.body.name}, function(err, result){
+        if (err) {
+          return res.json({success: false, msg: 'Error ocurred'});
+        }
+        if (!result) {
+          User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesBorrowed:{name: req.body.name}}}, {upsert:true}, function (err, result){
+            if(err) {
+              return res.json({success: false, msg: 'Error ocurred'});
+            }
+            return res.json({gameinlist: false, msg: 'Game Added to Borrowed List'});
+          });
+        } else {
+          return res.json({gameinlist: true, msg: 'The game is in list'});
+        }
+      });
+    } else if (req.body.gameType == 'done') {
+      User.findOne({'name':req.body.username, 'gamesDone.name': req.body.name}, function(err, result){
+        if (err) {
+          return res.json({success: false, msg: 'Error ocurred'});
+        }
+        if (!result) {
+          User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesDone:{name: req.body.name}}}, {upsert:true}, function (err, result){
+            if(err) {
+              return res.json({success: false, msg: 'Error ocurred'});
+            }
+            return res.json({gameinlist: false, msg: 'Game Added to Done List'});
+          });
+        } else {
+          return res.json({gameinlist: true, msg: 'The game is in list'});
+        }
+      });
+    } else if (req.body.gameType == 'playing') {
+      User.findOne({'name':req.body.username, 'gamesPlaying.name': req.body.name}, function(err, result){
+        if (err) {
+          return res.json({success: false, msg: 'Error ocurred'});
+        }
+        if (!result) {
+          User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesPlaying:{name: req.body.name}}}, {upsert:true}, function (err, result){
+            if(err) {
+              return res.json({success: false, msg: 'Error ocurred'});
+            }
+            return res.json({gameinlist: false, msg: 'Game Added to Playing List'});
+          });
+        } else {
+          return res.json({gameinlist: true, msg: 'The game is in list'});
+        }
+      });
+    } else {
+      User.findOne({'name':req.body.username, 'gamesWishlist.name': req.body.name}, function(err, result){
+        if (err) {
+          return res.json({success: false, msg: 'Error ocurred'});
+        }
+        if (!result) {
+          User.findOneAndUpdate({'name':req.body.username}, {$push:{gamesWishlist:{name: req.body.name}}}, {upsert:true}, function (err, result){
+            if(err) {
+              return res.json({success: false, msg: 'Error ocurred'});
+            }
+            return res.json({gameinlist: false, msg: 'Game Added to Playing List'});
+          });
+        } else {
+          return res.json({gameinlist: true, msg: 'The game is in list'});
+        }
+      });
+    }
+
   }
 });
 
@@ -146,7 +213,6 @@ apiRoutes.get('/memberinfo', passport.authenticate('jwt', {session: false}), fun
       name: decoded.name
     }, function(err, user){
       if (err) throw err;
-I
       if(!user) {
         return res.status(403).send({success: false, msg: 'Authentication failed. User not found'});
       } else {
@@ -170,6 +236,27 @@ getToken = function(headers) {
     return null;
   }
 };
+
+apiRoutes.get('/gameslist', function(req,res){
+  var gamesJson = [];
+  Game.find({},function(err, games){
+    if (err) {
+      return res.json({sucess: false, msg: 'An error ocurred'})
+    }
+    if (!games) {
+      return res.status(403).send({success: false, msg: 'There are no games'})
+    } else {
+      for(i=0;i<games.length;i++) {
+        gamesJson.push({
+          name: games[i].name,
+          platform: games[i].platform,
+          cover: games[i].cover
+        });
+      }
+      return res.status(403).send({success:true, gamesList: gamesJson});
+    }
+  });
+});
  
 // connect the api routes under /api/*
 app.use('/api', apiRoutes);
